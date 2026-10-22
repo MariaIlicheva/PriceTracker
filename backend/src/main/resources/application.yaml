@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${DB_NAME:pricetracker}
+    username: ${DB_USER:pricetracker}
+    password: ${DB_PASSWORD:password}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Hibernate НЕ создаёт таблицы, только сверяет их с кодом
