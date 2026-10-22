@@ -41,7 +41,7 @@
 
   <g class="box"><rect x="56" y="266" width="143" height="56" rx="8" stroke-width="1"/>
     <text class="th" x="127.5" y="286" text-anchor="middle" dominant-baseline="central">REST API</text>
-    <text class="ts" x="127.5" y="304" text-anchor="middle" dominant-baseline="central">контроллеры, Swagger</text></g>
+    <text class="ts" x="127.5" y="304" text-anchor="middle" dominant-baseline="central">контроллеры</text></g>
   <g class="box"><rect x="211" y="266" width="143" height="56" rx="8" stroke-width="1"/>
     <text class="th" x="282.5" y="286" text-anchor="middle" dominant-baseline="central">Безопасность</text>
     <text class="ts" x="282.5" y="304" text-anchor="middle" dominant-baseline="central">сессии, bcrypt</text></g>
