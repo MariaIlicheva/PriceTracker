@@ -56,7 +56,7 @@ PriceTracker/
 ├── backend/                  
 │   ├── pom.xml
 │   └── src/main/
-│       ├── java/ru/project/
+│       ├── java/ru/pet/project/
 │       │   ├── api/          контроллеры REST API
 │       │   ├── security/     настройки Spring Security
 │       │   ├── product/      товары и ссылки
