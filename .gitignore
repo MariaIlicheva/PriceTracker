@@ -1,1 +1,18 @@
+# IDE
 .idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# macOS
+.DS_Store
+
+# Сборка
+target/
+build/
+node_modules/
+dist/
+
+# Секреты и локальные настройки
+.env

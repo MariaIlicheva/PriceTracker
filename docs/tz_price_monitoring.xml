@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE spec [
+  <!-- Корневой элемент: техническое задание -->
+  <!ELEMENT spec (description, data, roles, interface, technologies, testing)>
+  <!ATTLIST spec
+      version CDATA #REQUIRED
+      date    CDATA #REQUIRED
+      author  CDATA #REQUIRED
+      group   CDATA #IMPLIED>
+
+  <!-- 1. Описание -->
+  <!ELEMENT description (name, domain)>
+  <!ELEMENT name (#PCDATA)>
+  <!ELEMENT domain (p+, list*)>
+  <!ELEMENT p (#PCDATA | code)*>
+  <!ELEMENT code (#PCDATA)>
+  <!ELEMENT list (item+)>
+  <!ATTLIST list title CDATA #IMPLIED>
+  <!ELEMENT item (#PCDATA | code)*>
+
+  <!-- 2. Данные -->
+  <!ELEMENT data (overview, entity+, integrity)>
+  <!ELEMENT overview (p+, list*)>
+  <!ELEMENT entity (purpose, field+, entity-constraint*)>
+  <!ATTLIST entity
+      name  CDATA #REQUIRED
+      table CDATA #REQUIRED
+      partitioned (yes | no) "no">
+  <!ELEMENT purpose (#PCDATA | code)*>
+  <!ELEMENT field (constraint*, note?)>
+  <!ATTLIST field
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      title CDATA #REQUIRED>
+  <!ELEMENT constraint (#PCDATA | code)*>
+  <!ATTLIST constraint
+      kind (pk | fk | unique | not-null | check | default | index) #REQUIRED>
+  <!ELEMENT note (#PCDATA | code)*>
+  <!ELEMENT entity-constraint (#PCDATA | code)*>
+  <!ATTLIST entity-constraint
+      kind (pk | fk | unique | check | index | trigger | partition) #REQUIRED>
+
+  <!ELEMENT integrity (rule+)>
+  <!ELEMENT rule (#PCDATA | code)*>
+  <!ATTLIST rule
+      id   ID    #REQUIRED
+      kind (referential | domain | business | temporal | access) #REQUIRED>
+
+  <!-- 3. Пользовательские роли -->
+  <!ELEMENT roles (role+)>
+  <!ELEMENT role (role-name, responsibility, count)>
+  <!ATTLIST role
+      id   ID #REQUIRED
+      type (human) "human">
+  <!ELEMENT role-name (#PCDATA)>
+  <!ELEMENT responsibility (item+)>
+  <!ELEMENT count (#PCDATA)>
+
+  <!-- 4. UI / API -->
+  <!ELEMENT interface (ui, api)>
+  <!ELEMENT ui (page+)>
+  <!ELEMENT page (item+)>
+  <!ATTLIST page
+      title  CDATA #REQUIRED
+      path   CDATA #REQUIRED
+      access IDREFS #REQUIRED>
+  <!ELEMENT api (endpoint+)>
+  <!ATTLIST api base CDATA #REQUIRED>
+  <!ELEMENT endpoint (#PCDATA | code)*>
+  <!ATTLIST endpoint
+      method (GET | POST | PUT | PATCH | DELETE) #REQUIRED
+      path   CDATA #REQUIRED
+      access IDREFS #REQUIRED>
+
+  <!-- 5. Технологии разработки -->
+  <!ELEMENT technologies (language, dbms, tool+)>
+  <!ELEMENT language (#PCDATA)>
+  <!ATTLIST language version CDATA #REQUIRED>
+  <!ELEMENT dbms (#PCDATA)>
+  <!ATTLIST dbms version CDATA #REQUIRED>
+  <!ELEMENT tool (#PCDATA)>
+  <!ATTLIST tool
+      name    CDATA #REQUIRED
+      purpose CDATA #REQUIRED>
+
+  <!-- 6. Тестирование -->
+  <!ELEMENT testing (test-group+)>
+  <!ELEMENT test-group (case+)>
+  <!ATTLIST test-group
+      title CDATA #REQUIRED
+      level (unit | integration | db | load | e2e) #REQUIRED>
+  <!ELEMENT case (#PCDATA | code)*>
+  <!ATTLIST case covers IDREFS #IMPLIED>
+]>
+<spec version="1.0" date="2026-10-11" author="Ильичева М. К." group="24Б11-пу">
+
+  <!-- ============================ 1. ОПИСАНИЕ ============================ -->
+  <description>
+    <name>PriceTracker — веб-приложение для мониторинга цен на товары с маркетплейсов</name>
+    <domain>
+      <p>Покупатели интернет-магазинов тратят время на то, чтобы вручную проверять цену нужного товара в нескольких магазинах и ждать снижения. Приложение берёт эту работу на себя: пользователь один раз добавляет товар и ссылки на его страницы на разных маркетплейсах, система сама дважды в день собирает цены, показывает их историю на графике и присылает письмо, когда цена опускается ниже заданного пользователем порога.</p>
+      <p>Существующие аналоги (traceprice.net, palert.ru) ориентированы в первую очередь на маркетологов и мониторинг цен конкурентов. Данный проект ориентирован на обычных покупателей.</p>
+      <p>Цена определяется парсингом страницы товара по ссылке, которую добавил пользователь. Поддерживаемые маркетплейсы: Wildberries, Ozon, Яндекс Маркет, Купер, AliExpress. Маркетплейс определяется по домену ссылки через справочную таблицу.</p>
+      <p>Если несколько пользователей отслеживают одну и ту же ссылку, она хранится в системе один раз и парсится один раз за цикл опроса; последняя цена и время проверки обновляются у общей записи и доступны всем подписанным пользователям.</p>
+      <p>История цен хранится как временной ряд за последние 30 дней. Общий рейтинг товаров не предусмотрен: товар принадлежит пользователю, а его название вводится вручную, поэтому одинаковые товары разных пользователей нельзя надёжно сопоставить.</p>
+      <list title="Основной функционал">
+        <item>Регистрация и авторизация пользователя по email и паролю; удаление своего профиля.</item>
+        <item>Добавление товара для отслеживания: название, ссылки и пороговая цена.</item>
+        <item>Добавление к товару нескольких ссылок на разные маркетплейсы; определение маркетплейса по домену.</item>
+        <item>Постановка товара на паузу и возобновление отслеживания.</item>
+        <item>Удаление товара его владельцем с каскадным удалением связанных данных.</item>
+        <item>Автоматический сбор цен по расписанию два раза в день, в 09:00 и 21:00 МСК, через конкурентную очередь задач в БД.</item>
+        <item>Хранение истории цен как временного ряда в таблице, секционированной по дням; автоматическое удаление данных старше 30 дней.</item>
+        <item>Триггер проверки порога: при пересечении порога вниз создаётся запись в очереди уведомлений; отправка письма пользователю.</item>
+        <item>Визуализация истории цен на графике по каждой ссылке товара за выбранный период (неделя, месяц).</item>
+        <item>Транзакционная запись результатов парсинга: замер, обновление текущей цены и уведомления сохраняются атомарно.</item>
+        <item>Разграничение прав доступа к БД.</item>
+      </list>
+    </domain>
+  </description>
+
+  <!-- ============================== 2. ДАННЫЕ ============================= -->
+  <data>
+    <overview>
+      <p>Схема в третьей нормальной форме.</p>
+      <list title="Связи">
+        <item>пользователь 1:N товары;</item>
+        <item>товары M:N ссылки (через <code>product_links</code>);</item>
+        <item>ссылка 1:N замеры цены, задачи парсинга, уведомления;</item>
+        <item>маркетплейс 1:N домены и ссылки.</item>
+      </list>
+    </overview>
+
+
+    <entity name="Пользователь" table="users">
+      <purpose>Зарегистрированный пользователь системы.</purpose>
+      <field name="id" type="BIGINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="email" type="VARCHAR(255)" title="Электронная почта">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="unique">Уникален без учёта регистра: уникальный индекс по <code>lower(email)</code>.</constraint>
+        <constraint kind="check">Соответствует формату адреса: <code>email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'</code>.</constraint>
+      </field>
+      <field name="password_hash" type="VARCHAR(100)" title="Хеш пароля">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <note>Хранится только bcrypt-хеш, пароль в открытом виде не сохраняется. Требование к паролю (не менее 8 символов, буквы и цифры) проверяется приложением до хеширования.</note>
+      </field>
+      <field name="created_at" type="TIMESTAMPTZ" title="Дата регистрации">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="default"><code>now()</code></constraint>
+      </field>
+    </entity>
+
+    <entity name="Маркетплейс" table="marketplaces">
+      <purpose>Справочник поддерживаемых маркетплейсов. Заполняется миграцией, через интерфейс не изменяется.</purpose>
+      <field name="id" type="SMALLINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="code" type="VARCHAR(20)" title="Код">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="unique">Уникален.</constraint>
+        <constraint kind="check"><code>code IN ('wb', 'ozon', 'ym', 'kuper', 'ali')</code></constraint>
+      </field>
+      <field name="name" type="VARCHAR(100)" title="Название">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="unique">Уникально.</constraint>
+      </field>
+    </entity>
+
+    <entity name="Домен маркетплейса" table="marketplace_domains">
+      <purpose>Домены, по которым определяется маркетплейс ссылки. Вынесены в отдельную таблицу, так как у одного маркетплейса может быть несколько доменов (1НФ).</purpose>
+      <field name="domain" type="VARCHAR(100)" title="Домен">
+        <constraint kind="pk">Первичный ключ (например, <code>ozon.ru</code>, <code>aliexpress.com</code>).</constraint>
+        <constraint kind="check">Хранится в нижнем регистре: <code>domain = lower(domain)</code>.</constraint>
+      </field>
+      <field name="marketplace_id" type="SMALLINT" title="Маркетплейс">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>marketplaces(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+    </entity>
+
+    <entity name="Товар" table="products">
+      <purpose>Товар, который отслеживает пользователь. Принадлежит ровно одному пользователю; название задаётся пользователем вручную.</purpose>
+      <field name="id" type="BIGINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="user_id" type="BIGINT" title="Владелец">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>users(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+        <constraint kind="index">B-tree индекс для выборки товаров пользователя и ускорения каскадного удаления.</constraint>
+      </field>
+      <field name="name" type="VARCHAR(255)" title="Название">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check">Не пустое: <code>length(trim(name)) &gt; 0</code>.</constraint>
+      </field>
+      <field name="target_price" type="NUMERIC(12,2)" title="Пороговая цена">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>target_price &gt; 0</code></constraint>
+      </field>
+      <field name="status" type="VARCHAR(10)" title="Статус отслеживания">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>status IN ('active', 'paused')</code></constraint>
+        <constraint kind="default"><code>'active'</code></constraint>
+        <note>На паузе новые цены для товара не собираются (если ссылку не отслеживает другой активный товар) и уведомления не создаются; товар и его история сохраняются.</note>
+      </field>
+      <field name="created_at" type="TIMESTAMPTZ" title="Дата добавления">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="default"><code>now()</code></constraint>
+      </field>
+      <entity-constraint kind="unique"><code>UNIQUE (user_id, name)</code> — у одного пользователя нет двух товаров с одинаковым названием.</entity-constraint>
+      <entity-constraint kind="trigger">Отложенный триггер-ограничение (<code>CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED</code>): к моменту фиксации транзакции у товара есть от 1 до 10 ссылок.</entity-constraint>
+    </entity>
+
+    <entity name="Ссылка" table="links">
+      <purpose>Уникальная страница товара на маркетплейсе. Общая для всех пользователей: если одну ссылку добавили несколько пользователей, она хранится и парсится один раз.</purpose>
+      <field name="id" type="BIGINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="marketplace_id" type="SMALLINT" title="Маркетплейс">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>marketplaces(id)</code>, <code>ON DELETE RESTRICT</code> — нельзя удалить маркетплейс, на который есть ссылки.</constraint>
+      </field>
+      <field name="url" type="TEXT" title="Нормализованный адрес">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="unique">Уникален.</constraint>
+        <constraint kind="check">Начинается с <code>https://</code>, длина не более 2048 символов.</constraint>
+      </field>
+      <field name="last_price" type="NUMERIC(12,2)" title="Последняя цена">
+        <constraint kind="check"><code>last_price &gt;= 0</code>; NULL, пока не было ни одного успешного замера.</constraint>
+      </field>
+      <field name="last_checked_at" type="TIMESTAMPTZ" title="Время последней проверки">
+        <note>NULL, пока проверок не было. Поддерживается тем же триггером.</note>
+      </field>
+      <entity-constraint kind="index">Индекс <code>(marketplace_id)</code> для внешнего ключа.</entity-constraint>
+    </entity>
+
+    <entity name="Ссылка товара" table="product_links">
+      <purpose>Связь «многие ко многим» между товарами пользователей и общими ссылками (подписка товара на ссылку).</purpose>
+      <field name="product_id" type="BIGINT" title="Товар">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>products(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+      <field name="link_id" type="BIGINT" title="Ссылка">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>links(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+        <constraint kind="index">Индекс <code>(link_id)</code> для поиска всех товаров, подписанных на ссылку (используется триггером порога).</constraint>
+      </field>
+      <field name="added_at" type="TIMESTAMPTZ" title="Дата добавления ссылки">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="default"><code>now()</code></constraint>
+      </field>
+      <entity-constraint kind="pk"><code>PRIMARY KEY (product_id, link_id)</code> — одна и та же ссылка не добавляется к товару дважды.</entity-constraint>
+      <entity-constraint kind="trigger">Триггер <code>AFTER DELETE</code>: если на ссылку больше не подписан ни один товар, ссылка удаляется, а вместе с ней каскадно её история цен и задачи парсинга.</entity-constraint>
+    </entity>
+
+    <entity name="Замер цены" table="price_history" partitioned="yes">
+      <purpose>Временной ряд цен по ссылкам за последние 30 дней.</purpose>
+      <field name="link_id" type="BIGINT" title="Ссылка">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>links(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+      <field name="captured_at" type="TIMESTAMPTZ" title="Момент замера">
+        <constraint kind="not-null">Обязательное поле; ключ секционирования.</constraint>
+        <constraint kind="check">Проверяется при вставке (<code>captured_at &lt;= now() + interval '5 minutes'</code>).</constraint>
+      </field>
+      <field name="price" type="NUMERIC(12,2)" title="Цена">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>price &gt;= 0</code></constraint>
+      </field>
+      <entity-constraint kind="pk"><code>PRIMARY KEY (link_id, captured_at)</code> — включает ключ секционирования (требование PostgreSQL), исключает повторный замер ссылки в один момент и служит индексом для запроса графика.</entity-constraint>
+      <entity-constraint kind="partition"><code>PARTITION BY RANGE (captured_at)</code>, одна секция на сутки. Секции создаются заранее на несколько дней вперёд; секции старше 30 дней удаляются через <code>DROP TABLE</code> хранимой процедурой, запускаемой раз в сутки.</entity-constraint>
+      <entity-constraint kind="trigger">Триггер <code>AFTER INSERT</code>: проверяет пересечение порога для всех активных товаров, подписанных на ссылку, создаёт записи в <code>notifications</code> и обновляет <code>links.last_price</code> и <code>links.last_checked_at</code>.</entity-constraint>
+    </entity>
+
+    <entity name="Задача парсинга" table="parse_jobs">
+      <purpose>Очередь задач на сбор цены по ссылке. Обрабатывается несколькими воркерами конкурентно.</purpose>
+      <field name="id" type="BIGINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="link_id" type="BIGINT" title="Ссылка">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>links(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+      <field name="scheduled_at" type="TIMESTAMPTZ" title="Плановое время запуска">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+      </field>
+      <field name="status" type="VARCHAR(12)" title="Статус">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>status IN ('pending', 'processing', 'done', 'failed')</code></constraint>
+        <constraint kind="default"><code>'pending'</code></constraint>
+      </field>
+      <field name="attempts" type="SMALLINT" title="Число попыток">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>attempts BETWEEN 0 AND 3</code></constraint>
+      </field>
+      <field name="locked_at" type="TIMESTAMPTZ" title="Время захвата воркером">
+        <note>Используется для возврата «зависших» задач в очередь, если воркер упал.</note>
+      </field>
+      <field name="error" type="TEXT" title="Текст ошибки">
+        <note>Заполняется при неудачном парсинге.</note>
+      </field>
+      <entity-constraint kind="unique"><code>UNIQUE (link_id, scheduled_at)</code> — на один запуск по одной ссылке создаётся одна задача, даже если её отслеживают несколько пользователей.</entity-constraint>
+      <entity-constraint kind="check"><code>status &lt;&gt; 'processing' OR locked_at IS NOT NULL</code></entity-constraint>
+      <entity-constraint kind="index">Частичный индекс <code>(scheduled_at) WHERE status = 'pending'</code> — в индексе только ожидающие задачи.</entity-constraint>
+    </entity>
+
+    <entity name="Уведомление" table="notifications">
+      <purpose>Очередь писем пользователю о снижении цены ниже порога.</purpose>
+      <field name="id" type="BIGINT GENERATED ALWAYS AS IDENTITY" title="Идентификатор">
+        <constraint kind="pk">Первичный ключ.</constraint>
+      </field>
+      <field name="product_id" type="BIGINT" title="Товар">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>products(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+      <field name="link_id" type="BIGINT" title="Ссылка, на которой упала цена">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="fk">Ссылается на <code>links(id)</code>, <code>ON DELETE CASCADE</code>.</constraint>
+      </field>
+      <field name="price" type="NUMERIC(12,2)" title="Цена, вызвавшая уведомление">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>price &gt;= 0</code></constraint>
+      </field>
+      <field name="status" type="VARCHAR(10)" title="Статус отправки">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="check"><code>status IN ('pending', 'sent', 'failed')</code></constraint>
+        <constraint kind="default"><code>'pending'</code></constraint>
+      </field>
+      <field name="created_at" type="TIMESTAMPTZ" title="Время создания">
+        <constraint kind="not-null">Обязательное поле.</constraint>
+        <constraint kind="default"><code>now()</code></constraint>
+      </field>
+      <field name="sent_at" type="TIMESTAMPTZ" title="Время отправки">
+        <constraint kind="check"><code>(status = 'sent') = (sent_at IS NOT NULL)</code></constraint>
+      </field>
+      <entity-constraint kind="index">Частичный индекс <code>(created_at) WHERE status = 'pending'</code> для выборки неотправленных писем.</entity-constraint>
+      <entity-constraint kind="index">Индекс <code>(product_id)</code> для внешнего ключа.</entity-constraint>
+    </entity>
+
+    <integrity>
+      <rule id="R1" kind="referential">Каскадное удаление пользователя: <code>users</code> → <code>products</code> → <code>product_links</code>, <code>notifications</code>. Пользователь может удалить свой профиль в любой момент, приложению достаточно одного <code>DELETE FROM users</code>.</rule>
+      <rule id="R2" kind="referential">Каскадное удаление товара: удаляются его подписки на ссылки и уведомления. Ссылка, на которую больше никто не подписан, удаляется триггером вместе с историей цен и задачами парсинга. История общей ссылки сохраняется, пока её отслеживает хотя бы один другой товар.</rule>
+      <rule id="R3" kind="referential">Справочник маркетплейсов защищён от удаления используемых записей (<code>ON DELETE RESTRICT</code> в <code>links</code>).</rule>
+      <rule id="R4" kind="domain">Маркетплейс ссылки определяется по домену через <code>marketplace_domains</code>. Ссылка с доменом, отсутствующим в справочнике, не сохраняется, и товар не создаётся целиком.</rule>
+      <rule id="R5" kind="domain">Все денежные значения хранятся в <code>NUMERIC(12,2)</code> и неотрицательны; время хранится в <code>TIMESTAMPTZ</code>.</rule>
+      <rule id="R6" kind="business">У товара от 1 до 10 ссылок (отложенный триггер-ограничение, проверка при фиксации транзакции).</rule>
+      <rule id="R7" kind="business">Уведомление создаётся только при пересечении порога вниз: новая цена ниже <code>target_price</code>, а предыдущая цена ссылки была не ниже порога или отсутствовала. Пока цена остаётся ниже порога, повторных писем нет; после роста выше порога и нового падения создаётся новое уведомление.</rule>
+      <rule id="R8" kind="business">Для товаров на паузе уведомления не создаются, а задачи парсинга создаются только для ссылок, на которые подписан хотя бы один активный товар.</rule>
+      <rule id="R9" kind="business">Задача парсинга захватывается одним воркером. Задача, не выполненная за 3 попытки, получает статус <code>failed</code>.</rule>
+      <rule id="R10" kind="business">Результат парсинга фиксируется в одной транзакции: вставка замера, срабатывание триггера (обновление текущей цены и создание уведомлений) и перевод задачи в <code>done</code>. При ошибке не сохраняется ничего, кроме счётчика попыток и текста ошибки.</rule>
+      <rule id="R11" kind="temporal">История цен хранится не более 30 дней: суточные секции старше этого срока удаляются целиком.</rule>
+      <rule id="R12" kind="access">Пользователь видит и изменяет только свои товары: все запросы приложения фильтруются по <code>user_id</code> текущего пользователя.</rule>
+      <rule id="R13" kind="access">Разграничение прав доступа к БД через две роли PostgreSQL. <code>price_owner</code> — владелец схемы, от её имени выполняются только миграции (создание и изменение таблиц, индексов, триггеров, функций). <code>price_app</code> — роль, под которой работает приложение: SELECT, INSERT, UPDATE, DELETE на таблицы и EXECUTE на функции обслуживания секций, без права изменять структуру (DDL); на справочники <code>marketplaces</code> и <code>marketplace_domains</code> — только SELECT.</rule>
+    </integrity>
+  </data>
+
+  <!-- ========================= 3. ПОЛЬЗОВАТЕЛЬСКИЕ РОЛИ ========================= -->
+  <roles>
+    <role id="guest" type="human">
+      <role-name>Гость</role-name>
+      <responsibility>
+        <item>Регистрация по email и паролю.</item>
+        <item>Вход в систему.</item>
+      </responsibility>
+      <count>Не ограничено.</count>
+    </role>
+
+    <role id="user" type="human">
+      <role-name>Пользователь</role-name>
+      <responsibility>
+        <item>Добавление, изменение и удаление своих товаров и их ссылок.</item>
+        <item>Постановка товаров на паузу и возобновление отслеживания.</item>
+        <item>Просмотр списка своих товаров с фильтром по статусу и графиков истории цен.</item>
+        <item>Получение email-уведомлений о снижении цены.</item>
+        <item>Выход из системы и удаление своего профиля.</item>
+      </responsibility>
+      <count>Не ограничено; проектная нагрузка — до 1 000 пользователей, в среднем 10 товаров по 3 ссылки (около 30 000 ссылок, до 60 000 замеров в сутки, около 1,8 млн строк истории за 30 дней).</count>
+    </role>
+
+    <role id="admin" type="human">
+      <role-name>Администратор (разработчик)</role-name>
+      <responsibility>
+        <item>Ведение справочника маркетплейсов и доменов через миграции.</item>
+        <item>Изменение схемы БД через миграции Flyway.</item>
+        <item>Контроль работы очереди парсинга и отправки писем.</item>
+      </responsibility>
+      <count>1</count>
+    </role>
+
+
+  </roles>
+
+  <!-- ============================== 4. UI / API ============================== -->
+  <interface>
+    <ui>
+      <page title="Регистрация" path="/register" access="guest">
+        <item>Поля: email, пароль, повтор пароля; согласие на получение писем.</item>
+        <item>Проверка формата email, совпадения паролей и требований к паролю; сообщение, если email уже занят.</item>
+      </page>
+      <page title="Вход" path="/login" access="guest">
+        <item>Поля: email и пароль; сообщение о неверных данных без уточнения, какое поле неверно.</item>
+      </page>
+      <page title="Мои товары (главный экран)" path="/products" access="user">
+        <item>Список товаров: название, лучшая текущая цена, статус (ниже порога, отслеживается, на паузе).</item>
+        <item>Фильтр по статусу: все, ниже порога, отслеживаются, на паузе.</item>
+        <item>Кнопка добавления товара; время следующей проверки цен.</item>
+      </page>
+      <page title="Добавление и редактирование товара" path="/products/new, /products/{id}/edit" access="user">
+        <item>Поля: название и пороговая цена; подсказка, что цены проверяются в 09:00 и 21:00 МСК.</item>
+        <item>Список ссылок (от 1 до 10) с автоматическим определением маркетплейса по домену и сообщением об ошибке для неподдерживаемого сайта.</item>
+      </page>
+      <page title="Страница товара" path="/products/{id}" access="user">
+        <item>График истории цен по каждой ссылке с линией порога; переключение периода: неделя, месяц.</item>
+        <item>Таблица ссылок: маркетплейс, текущая цена.</item>
+        <item>Действия: пауза или возобновление, редактирование, удаление.</item>
+      </page>
+      <page title="Профиль" path="/profile" access="user">
+        <item>Email пользователя; выход; удаление профиля с подтверждением и предупреждением о каскадном удалении всех данных.</item>
+      </page>
+    </ui>
+
+    <api base="/api/v1">
+      <endpoint method="POST" path="/auth/register" access="guest">Регистрация. Тело: email, пароль. Ответ 201 или 409, если email занят.</endpoint>
+      <endpoint method="POST" path="/auth/login" access="guest">Вход, создание сессии.</endpoint>
+      <endpoint method="POST" path="/auth/logout" access="user">Выход.</endpoint>
+      <endpoint method="DELETE" path="/me" access="user">Удаление своего профиля (каскадное удаление данных).</endpoint>
+      <endpoint method="GET" path="/products?status={all|below|active|paused}" access="user">Список своих товаров с текущей лучшей ценой и статусом.</endpoint>
+      <endpoint method="POST" path="/products" access="user">Создание товара вместе со ссылками в одной транзакции.</endpoint>
+      <endpoint method="GET" path="/products/{id}" access="user">Карточка товара со ссылками и текущими ценами.</endpoint>
+      <endpoint method="PUT" path="/products/{id}" access="user">Изменение названия, порога и набора ссылок.</endpoint>
+      <endpoint method="PATCH" path="/products/{id}/status" access="user">Пауза или возобновление: <code>{"status": "paused" | "active"}</code>.</endpoint>
+      <endpoint method="DELETE" path="/products/{id}" access="user">Удаление товара владельцем.</endpoint>
+      <endpoint method="GET" path="/products/{id}/history?period={week|month}" access="user">История цен по каждой ссылке товара для графика.</endpoint>
+      <endpoint method="GET" path="/marketplaces" access="guest user">Справочник поддерживаемых маркетплейсов и доменов.</endpoint>
+    </api>
+  </interface>
+
+  <!-- ========================= 5. ТЕХНОЛОГИИ РАЗРАБОТКИ ========================= -->
+  <technologies>
+    <language version="21">Java</language>
+    <dbms version="16">PostgreSQL</dbms>
+    <tool name="Spring Boot 3" purpose="Каркас приложения: Spring Web, Spring Security, Spring Data JPA, Spring Mail, планировщик @Scheduled">Серверная часть и REST API.</tool>
+    <tool name="Flyway" purpose="Версионирование схемы БД">SQL-миграции: таблицы, индексы, секции, триггеры, роли.</tool>
+    <tool name="Jsoup, Playwright for Java" purpose="Парсинг страниц товаров">Jsoup для статических страниц, Playwright (headless-браузер) для страниц, которые формируются скриптами.</tool>
+    <tool name="HTML, CSS, JavaScript" purpose="Клиентская часть">Страницы интерфейса и графики истории цен.</tool>
+    <tool name="Maven" purpose="Сборка проекта">Сборка и управление зависимостями.</tool>
+    <tool name="IntelliJ IDEA" purpose="Среда разработки">Разработка, работа с БД, построение ER-диаграммы.</tool>
+    <tool name="Docker Compose" purpose="Локальное окружение">Запуск PostgreSQL и приложения.</tool>
+  </technologies>
+
+  <!-- ============================== 6. ТЕСТИРОВАНИЕ ============================== -->
+  <testing>
+    <test-group title="Ограничения целостности" level="db">
+      <case covers="R5">Вставка отрицательной цены, пустого названия товара, неверного статуса отклоняется ограничениями CHECK.</case>
+      <case>Повторная регистрация с тем же email в другом регистре отклоняется уникальным индексом по <code>lower(email)</code>.</case>
+      <case covers="R6">Фиксация транзакции с товаром без ссылок или с 11 ссылками отклоняется отложенным триггером.</case>
+      <case covers="R4">Ссылка с доменом, отсутствующим в справочнике, не сохраняется; товар не создаётся.</case>
+      <case covers="R3">Удаление маркетплейса, на который есть ссылки, отклоняется.</case>
+    </test-group>
+
+    <test-group title="Каскадное удаление" level="db">
+      <case covers="R1">Удаление пользователя удаляет его товары, подписки и уведомления; в связанных таблицах не остаётся строк с его идентификаторами.</case>
+      <case covers="R2">Удаление товара, чья ссылка есть только у него, удаляет ссылку, историю цен и задачи парсинга.</case>
+      <case covers="R2">Удаление товара, чью ссылку отслеживает другой пользователь, сохраняет ссылку и её историю.</case>
+    </test-group>
+
+    <test-group title="Триггеры и уведомления" level="db">
+      <case covers="R7">Последовательность цен 30 000 → 26 900 → 26 500 → 28 000 → 26 000 при пороге 27 000 создаёт ровно два уведомления.</case>
+      <case covers="R7">Две подписки разных пользователей на одну ссылку с разными порогами получают уведомления независимо.</case>
+      <case covers="R8">Для товара на паузе уведомление не создаётся; задачи парсинга для ссылок только приостановленных товаров не создаются.</case>
+      <case>После вставки замера <code>links.last_price</code> и <code>links.last_checked_at</code> равны значениям этого замера.</case>
+    </test-group>
+
+    <test-group title="Конкурентная очередь и транзакции" level="integration">
+      <case covers="R9">4 параллельных воркера обрабатывают 10 000 задач: каждая задача выполнена ровно один раз, взаимных блокировок нет.</case>
+      <case covers="R9">Одна ссылка у 50 пользователей порождает одну задачу на запуск.</case>
+      <case covers="R10">Ошибка после вставки замера откатывает транзакцию целиком: нет ни замера, ни уведомления, ни изменения <code>last_price</code>.</case>
+      <case covers="R9">Задача, упавшая 3 раза, получает статус <code>failed</code>.</case>
+    </test-group>
+
+    <test-group title="Секционирование и производительность" level="load">
+      <case covers="R11">Процедура обслуживания создаёт секции на будущие дни и удаляет секции старше 30 дней; данные за последние 30 дней сохраняются.</case>
+      <case>На сгенерированных через <code>generate_series</code> данных (10 млн замеров) запрос графика за неделю по одной ссылке использует индекс первичного ключа и читает только секции за 7 дней (partition pruning). Подтверждается планом <code>EXPLAIN (ANALYZE, BUFFERS)</code> и сравнением с таблицей без секций и индексов.</case>
+      <case>Выборка ожидающих задач использует частичный индекс; время выборки не растёт с числом выполненных задач.</case>
+    </test-group>
+
+    <test-group title="API и права доступа" level="integration">
+      <case covers="R12">Запрос к чужому товару по идентификатору возвращает 404; изменить или удалить чужой товар нельзя.</case>
+      <case>Запросы без авторизации к защищённым адресам возвращают 401.</case>
+      <case covers="R13">Под ролью <code>price_app</code> не выполняются <code>CREATE</code>, <code>ALTER</code>, <code>DROP</code> и изменение справочников.</case>
+    </test-group>
+
+    <test-group title="Парсинг и отправка писем" level="unit">
+      <case>Парсер каждого маркетплейса извлекает цену из сохранённых HTML-страниц (тестовые образцы); при изменённой разметке возвращает ошибку, а не неверную цену.</case>
+      <case>Нормализация адресов: ссылки, отличающиеся только параметрами <code>utm_*</code> и регистром хоста, сводятся к одной записи.</case>
+      <case>Письмо из очереди отправляется через тестовый SMTP-сервер (GreenMail), уведомление получает статус <code>sent</code> и время отправки.</case>
+    </test-group>
+
+    <test-group title="Пользовательские сценарии" level="e2e">
+      <case>Регистрация → вход → добавление товара с тремя ссылками → сбор цен → просмотр графика → пауза → удаление товара → удаление профиля.</case>
+    </test-group>
+  </testing>
+</spec>
+
