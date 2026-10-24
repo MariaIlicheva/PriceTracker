@@ -4,5 +4,10 @@ spring:
     username: ${DB_USER:pricetracker}
     password: ${DB_PASSWORD:password}
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: validate   # Hibernate НЕ создаёт таблицы, только сверяет их с кодом
+      ddl-auto: validate # Hibernate НЕ создаёт таблицы, только сверяет их с кодом
+    properties:
+      hibernate:
+        hbm2ddl:
+          extra_physical_table_types: PARTITIONED TABLE
