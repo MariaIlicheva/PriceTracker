@@ -53,22 +53,29 @@
 
 ```
 PriceTracker/
-├── backend/                  
+├── backend/
 │   ├── pom.xml
 │   └── src/main/
 │       ├── java/ru/pet/project/
-│       │   ├── api/          контроллеры REST API
-│       │   ├── security/     настройки Spring Security
-│       │   ├── product/      товары и ссылки
-│       │   ├── history/      история цен
-│       │   ├── parsing/      планировщик, очередь, парсеры маркетплейсов
-│       │   ├── notification/ отправка писем
-│       │   └── maintenance/  обслуживание секций
-│       └── resources/db/migration/   миграции Flyway
-├── frontend/                 страницы, стили, скрипты, конфиг nginx
-├── docs/                     ТЗ, макеты, пользовательские пути, архитектура
-├── .github/workflows/        CI
-└── docker-compose.yml
+│       │   ├── PriceTracker.java
+│       │   ├── api/            контроллеры REST API
+│       │   ├── security/       настройки Spring Security
+│       │   ├── common/         общие классы (конвертер статусов)
+│       │   ├── user/           пользователи
+│       │   ├── marketplace/    справочник маркетплейсов и доменов
+│       │   ├── product/        товары и ссылки
+│       │   ├── history/        история цен
+│       │   ├── parsing/        планировщик, очередь, парсеры маркетплейсов
+│       │   ├── notification/   отправка писем
+│       │   └── maintenance/    обслуживание секций
+│       └── resources/
+│           ├── application.yaml
+│           └── db/migration/   миграции Flyway (V1–V5)
+├── frontend/                   страницы, стили, скрипты, конфиг nginx
+├── docs/                       ТЗ, макеты, пользовательские пути, архитектура
+├── .github/workflows/          CI
+├── docker-compose.yaml
+└── .env.example                образец переменных окружения
 ```
 
 Пакеты бэкенда, `frontend/` и `docker-compose.yml` пока запланированы и появятся по ходу разработки.
