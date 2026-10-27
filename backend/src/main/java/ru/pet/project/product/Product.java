@@ -17,7 +17,9 @@ import ru.pet.project.user.User;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -109,5 +111,22 @@ public class Product {
 
     public Set<ProductLink> getLinks() {
         return Collections.unmodifiableSet(links);
+    }
+
+    public Optional<Link> cheapestLink() {
+        return links.stream()
+                .map(ProductLink::getLink)
+                .filter(link -> link.getLastPrice() != null)
+                .min(Comparator.comparing(Link::getLastPrice));
+    }
+
+    public ProductState state() {
+        if (status == ProductStatus.PAUSED) {
+            return ProductState.PAUSED;
+        }
+        boolean below = cheapestLink()
+                .map(link -> link.getLastPrice().compareTo(targetPrice) < 0)
+                .orElse(false);
+        return below ? ProductState.BELOW : ProductState.TRACKING;
     }
 }
