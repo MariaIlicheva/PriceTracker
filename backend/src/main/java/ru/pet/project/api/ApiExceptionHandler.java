@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.pet.project.api.dto.ApiError;
+import ru.pet.project.history.InvalidPeriodException;
 import ru.pet.project.marketplace.InvalidLinkException;
 import ru.pet.project.product.ProductNameTakenException;
 import ru.pet.project.product.ProductNotFoundException;
@@ -78,5 +79,11 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDataConflict(DataIntegrityViolationException e) {
         return new ApiError("Данные изменились одновременно с другим запросом. Повторите попытку");
+    }
+
+    @ExceptionHandler(InvalidPeriodException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleInvalidPeriod(InvalidPeriodException e) {
+        return new ApiError("Период графика может быть week или month", Map.of("period", "Неизвестный период"));
     }
 }

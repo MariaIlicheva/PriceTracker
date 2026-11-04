@@ -322,3 +322,34 @@ email=masha%40gmail.com&password=example123
 
 Ошибки: `404`.
 
+### GET /products/{id}/history?period=weekORmonth
+История цен товара для графика.
+
+`period` or `week` — 7 дней (по умолчанию), `month` — 30 дней 
+
+Ответ `200`: по одному ряду на каждую ссылку, точки по порядку времени.
+```json
+{
+  "period": "week",
+  "from": "2026-10-27T18:05:00Z",
+  "to": "2026-11-03T18:05:00Z",
+  "series": [
+    {
+      "linkId": 12,
+      "marketplaceCode": "ozon",
+      "marketplaceName": "Ozon",
+      "points": [
+        { "capturedAt": "2026-10-28T06:00:00Z", "price": 28990.00 },
+        { "capturedAt": "2026-10-28T18:00:00Z", "price": 28750.00 }
+      ]
+    }
+  ]
+}
+```
+Ошибки:
+
+| Код | Тело |
+|---|---|
+| 400 | `{"message": "Период графика может быть week или month", "fieldErrors": {"period": "Неизвестный период"}}` |
+| 404 | `{"message": "Товар не найден", "fieldErrors": {}}` |
+
