@@ -65,11 +65,11 @@ public class ParseJob {
         this.error = null;
     }
 
-    // задача вернётся в очередь, а после последней попытки станет FAILED
+    // если попытка не удалясь, задача вернётся в очередь, а после последней попытки станет FAILED
+    // locked_at остаётся временем этой попытки — по нему очередь выдерживает паузу перед повтором
     public void fail(String error) {
         this.attempts = (short) (attempts + 1);
         this.error = error;
-        this.lockedAt = null;
         this.status = attempts >= MAX_ATTEMPTS ? ParseJobStatus.FAILED : ParseJobStatus.PENDING;
     }
 
