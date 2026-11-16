@@ -17,10 +17,17 @@ services:
     ports:
       - "3000:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html:ro                       # файлы сайта; правки видны сразу
+      - ./frontend:/usr/share/nginx/html:ro   # файлы сайта; правки видны сразу
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro   # наши настройки nginx
     extra_hosts:
-      - "host.docker.internal:host-gateway"                       # адрес компьютера изнутри контейнера
+      - "host.docker.internal:host-gateway"  # адрес компьютера изнутри контейнера
+
+  mailpit:
+    image: axllent/mailpit:v1.21.0
+    container_name: pricetracker-mailpit
+    ports:
+      - "1025:1025"   # SMTP: сюда приложение отправляет письма
+      - "8025:8025"   # веб-интерфейс: http://localhost:8025
 
 volumes:
   pgdata:
