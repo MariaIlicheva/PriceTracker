@@ -20,10 +20,11 @@
 
 | Часть | Что используется |
 |---|---|
-| Бэкенд | Java 21, Spring Boot 3 (Web, Security, Data JPA, Mail), Maven |
+| Бэкенд | Java 21, Spring Boot 3.5 (Web, Security, Data JPA, Validation, Mail), Hibernate, Maven |
 | База данных | PostgreSQL 16, миграции Flyway |
-| Фронтенд | HTML, CSS, JavaScript, nginx |
-| Парсинг | Jsoup, Playwright for Java |
+| Фронтенд | HTML, CSS, JavaScript |
+| Веб-сервер | nginx: раздаёт фронтенд и проксирует `/api` на бэкенд |
+| Парсинг | `java.net.http.HttpClient`, Jackson (разметка schema.org) |
 | Инфраструктура | Docker, Docker Compose, GitHub Actions |
 
 ## Документация
@@ -32,14 +33,17 @@
 - [Архитектура](docs/architecture.md)
 - [Пользовательские пути](docs/user-flows.md)
 - [Макеты экранов](docs/МАКЕТ.pdf)
+- [Описание REST API](docs/api.md)
 
 ## Структура репозитория
 
 ```
-backend/              Spring Boot приложение
-frontend/             клиентская часть (в разработке)
-docs/                 ТЗ, макеты, архитектура, пользовательские пути
+backend/              Spring Boot приложение: REST API, сбор цен, миграции БД
+frontend/             клиентская часть: HTML, CSS, JavaScript; nginx.conf
+docs/                 ТЗ, макеты, архитектура, пользовательские пути, описание API
+scripts/dev/          скрипты для разработки (тестовая история цен)
 .github/workflows/    CI
+docker-compose.yaml   PostgreSQL и nginx для локального запуска
 ```
 
 ## Запуск
