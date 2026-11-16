@@ -1,6 +1,7 @@
 # PriceTracker
 
 ![Backend CI](https://github.com/MariaIlicheva/PriceTracker/actions/workflows/backend.yml/badge.svg)
+![Frontend CI](https://github.com/MariaIlicheva/PriceTracker/actions/workflows/frontend.yml/badge.svg)
 
 Удобное веб-приложение для мониторинга цен на товары маркетплейсов. Пользователь добавляет товар и ссылки на его страницы в разных магазинах, приложение собирает цены, показывает их историю на user-friendly графике и присылает письмо, оповещающее о снижении цены ниже заданного порога.
 
