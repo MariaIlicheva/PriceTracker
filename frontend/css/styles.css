@@ -1098,6 +1098,13 @@ h2 {
     stroke-linejoin: round;
 }
 
+/* Замер цены на графике: точка цвета магазина с белой обводкой */
+.chart-dot {
+    fill: var(--mp);
+    stroke: #fff;
+    stroke-width: 1.5;
+}
+
 /* Точка под курсором — маленький пузырь */
 .chart-focus {
     fill: rgba(255, 255, 255, 0.9);

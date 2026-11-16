@@ -69,6 +69,12 @@ export function renderChart(container, history, threshold) {
             ${series.map(s => html`
                 <polyline class="chart-line mp-${s.marketplaceCode}"
                           points="${s.points.map(p => `${x(p.time).toFixed(1)},${y(p.price).toFixed(1)}`).join(' ')}"/>`)}
+            ${series.map(s => html`
+                <g class="mp-${s.marketplaceCode}">
+                    ${s.points.map(p => html`
+                        <circle class="chart-dot" cx="${x(p.time).toFixed(1)}" cy="${y(p.price).toFixed(1)}"
+                                r="${s.points.length === 1 ? 5 : 3}"/>`)}
+                </g>`)}
             <circle class="chart-focus" r="6" visibility="hidden"/>
             <rect class="chart-hit" x="${PAD.left}" y="0" width="${WIDTH - PAD.left - PAD.right}" height="${HEIGHT}" fill="transparent"/>
         </svg>
