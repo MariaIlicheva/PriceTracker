@@ -32,10 +32,13 @@
 
 - [Техническое задание](docs/tz_price_monitoring.xml) (XML) и [его версия для чтения](docs/ТЗ_мониторинг_цен.docx)
 - [Архитектура](docs/architecture.md)
-- [Пользовательские пути](docs/user-flows.md)
+- [Пользовательские пути и user stories](docs/user-flows.md)
 - [Макеты экранов](docs/МАКЕТ.pdf)
 - [Описание REST API](docs/api.md)
 - [CI/CD и развёртывание](docs/ci-cd.md)
+- [Транзакции](docs/transactions.md)
+- [Инструкция пользоваеля](docs/user-guide.md)
+- [ER-диаграмма модели предметной области](docs/ER-diagram.png)
 
 ## Структура репозитория
 
