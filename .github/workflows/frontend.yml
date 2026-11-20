@@ -15,7 +15,7 @@ on:
 
 jobs:
   check:
-    name: Проверка и упаковка статики
+    name: Проверка, сборка образа и упаковка статики
     runs-on: ubuntu-latest
 
     steps:
@@ -43,12 +43,11 @@ jobs:
       - name: Проверить ссылки между файлами
         run: node .github/scripts/check-frontend-links.cjs
 
-      - name: Проверить конфигурацию nginx
-        run: |
-          docker run --rm \
-            --add-host host.docker.internal:host-gateway \
-            -v "$PWD/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
-            nginx:1.27-alpine nginx -t
+      - name: Собрать Docker-образ
+        run: docker build -t pricetracker-frontend frontend
+
+      - name: Проверить конфигурацию nginx в образе
+        run: docker run --rm --add-host backend:127.0.0.1 pricetracker-frontend nginx -t
 
       - name: Сохранить готовые файлы фронтенда
         uses: actions/upload-artifact@v4
@@ -56,5 +55,6 @@ jobs:
           name: frontend-static
           path: |
             frontend/
-            !frontend/nginx.conf
+            !frontend/Dockerfile
+            !frontend/nginx.conf.template
           if-no-files-found: error

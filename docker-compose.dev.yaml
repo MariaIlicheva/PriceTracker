@@ -1,0 +1,12 @@
+# Режим разработки: бэкенд запускается из IntelliJ IDEA на порту 8080,
+# а nginx отдаёт фронтенд прямо из папки frontend/ (правки видны без пересборки образа).
+# Запуск: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d db mailpit frontend
+services:
+  frontend:
+    environment:
+      BACKEND_URL: http://host.docker.internal:8080
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on: !reset []

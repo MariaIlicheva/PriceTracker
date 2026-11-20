@@ -35,6 +35,7 @@
 - [Пользовательские пути](docs/user-flows.md)
 - [Макеты экранов](docs/МАКЕТ.pdf)
 - [Описание REST API](docs/api.md)
+- [CI/CD и развёртывание](docs/ci-cd.md)
 
 ## Структура репозитория
 
@@ -49,4 +50,29 @@ docker-compose.yaml   PostgreSQL и nginx для локального запус
 
 ## Запуск
 
-Проект в разработке. Инструкция по запуску всего приложения одной командой появится вместе с `docker-compose.yml`.
+```bash
+cp .env.example .env     # при желании поменять пароль базы
+./deploy.sh
+```
+
+Скрипт соберёт образы, запустит базу, бэкенд, nginx и тестовый почтовый сервер и проверит, что сайт отвечает.
+
+- сайт: http://localhost
+- письма (Mailpit): http://localhost:8025
+
+Остановить: `docker compose down` (данные базы сохраняются в томе `pgdata`).
+
+### Режим разработки
+
+Бэкенд запускается из IntelliJ IDEA (класс `ru.pet.project.PriceTracker`), а база, почта и nginx — в Docker:
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d db mailpit frontend
+```
+
+nginx при этом отдаёт фронтенд прямо из папки `frontend/` и пересылает `/api` на бэкенд в IDEA.
+
+Тестовая история цен для графика:
+```bash
+docker exec -i pricetracker-db psql -U pricetracker -d pricetracker < scripts/dev/seed-price-history.sql
+```

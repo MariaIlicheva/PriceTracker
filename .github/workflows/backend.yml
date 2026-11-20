@@ -39,3 +39,5 @@ jobs:
           name: backend-jar
           path: backend/target/*.jar
           if-no-files-found: error
+      - name: Собрать Docker-образ
+        run: docker build -t pricetracker-backend .
