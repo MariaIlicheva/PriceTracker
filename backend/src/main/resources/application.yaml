@@ -11,11 +11,29 @@ spring:
       hibernate:
         hbm2ddl:
           extra_physical_table_types: PARTITIONED TABLE
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      "[mail.smtp.auth]": ${MAIL_SMTP_AUTH:false}
+      "[mail.smtp.ssl.enable]": ${MAIL_SSL:false}
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 5000
+      "[mail.smtp.writetimeout]": 5000
+
 pricetracker:
   parsing:
-    cron: "0 0 9,21 * * *"   # секунды минуты часы день месяц день_недели — 9:00 и 21:00 по Москве
+    cron: "0 0 9,21 * * *"   # 0 */2 * * * * секунды минуты часы день месяц день_недели — 9:00 и 21:00 по Москве
     workers: 2               # сколько обработчиков разбирают очередь одновременно
     poll-interval-ms: 10000  # как часто обработчики проверяют, нет ли новых задач
     request-delay-ms: 1500   # пауза между запросами к сайтам, чтобы не нагружать их
     retry-delay: 2m          # через сколько повторить неудачную попытку
     stale-after: 10m         # задача дольше этого считается зависшей
+  notifications:
+    from: ${MAIL_FROM:PriceTracker <noreply@pricetracker.local>}
+    site-url: ${SITE_URL:http://localhost:3000}   # адрес сайта для ссылки в письме
+    poll-interval-ms: 30000                       # как часто проверять очередь писем
+    batch-size: 20                                # сколько писем максимум за один проход
+    max-age: 24h                                  # уведомления старше этого не отправляем
